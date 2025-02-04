@@ -13,8 +13,13 @@ require("dotenv").config();
 
 const getAllUsersController = async (req, res) => {
   try {
-    const users = await getAllUsers();
-    res.json(users);
+    // Middleware untuk memastikan hanya admin yang bisa mengakses
+    await authMiddleware(req, res, async () => {
+      await adminMiddleware(req, res, async () => {
+        const users = await getAllUsers();
+        res.json(users);
+      });
+    });
   } catch (error) {
     console.error("Error in getAllUsersController:", error);
     res
@@ -25,11 +30,18 @@ const getAllUsersController = async (req, res) => {
 
 const getUserByIdController = async (req, res) => {
   try {
-    const user = await getUserById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
-    }
-    res.json(user);
+    // Middleware untuk memastikan pengguna sudah login
+    await authMiddleware(req, res, async () => {
+      const user = await getUserById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+      // Hanya boleh mengakses data diri sendiri atau jika memiliki role admin
+      if (req.user.id !== req.params.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      res.json(user);
+    });
   } catch (error) {
     console.error("Error in getUserByIdController:", error);
     res
@@ -94,12 +106,24 @@ const loginUser = async (req, res) => {
 
 const updateUsercontroller = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    const affectedRows = await updateUser(req.params.id, name, email, password);
-    if (affectedRows === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
-    }
-    res.json({ message: "User berhasil diupdate" });
+    // Middleware untuk memastikan pengguna sudah login
+    await authMiddleware(req, res, async () => {
+      // Hanya boleh mengupdate data diri sendiri atau jika memiliki role admin
+      if (req.user.id !== req.params.id && req.user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const { name, email, password } = req.body;
+      const affectedRows = await updateUser(
+        req.params.id,
+        name,
+        email,
+        password
+      );
+      if (affectedRows === 0) {
+        return res.status(404).json({ message: "User tidak ditemukan" });
+      }
+      res.json({ message: "User berhasil diupdate" });
+    });
   } catch (error) {
     console.error("Error in updateUsercontroller:", error);
     res
@@ -110,11 +134,16 @@ const updateUsercontroller = async (req, res) => {
 
 const deleteUserController = async (req, res) => {
   try {
-    const affectedRows = await deleteUser(req.params.id);
-    if (affectedRows === 0) {
-      return res.status(404).json({ message: "User tidak ditemukan" });
-    }
-    res.json({ message: "User berhasil dihapus" });
+    // Middleware untuk memastikan pengguna sudah login dan memiliki role admin
+    await authMiddleware(req, res, async () => {
+      await adminMiddleware(req, res, async () => {
+        const affectedRows = await deleteUser(req.params.id);
+        if (affectedRows === 0) {
+          return res.status(404).json({ message: "User tidak ditemukan" });
+        }
+        res.json({ message: "User berhasil dihapus" });
+      });
+    });
   } catch (error) {
     console.error("Error in deleteUserController:", error);
     res
