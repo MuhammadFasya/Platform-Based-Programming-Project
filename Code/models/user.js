@@ -99,6 +99,19 @@ const comparePassword = async (inputPassword, hashedPassword) => {
   }
 };
 
+const updateUserRole = async (id, role) => {
+  try {
+    const [result] = await db.execute(
+      "UPDATE users SET role = ? WHERE id = ?",
+      [role, id]
+    );
+    return result.affectedRows;
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    throw error;
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -107,4 +120,5 @@ module.exports = {
   updateUser,
   deleteUser,
   comparePassword,
+  updateUserRole,
 };

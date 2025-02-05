@@ -7,8 +7,11 @@ const {
   loginUser,
   updateUsercontroller,
   deleteUserController,
+  createUser,
+  updateUserRoleController,
 } = require("../controllers/user-controller");
-const { authMiddleware, adminMiddleware } = require("../middlewares");
+const authMiddleware = require("../middlewares/auth-middleware");
+const adminMiddleware = require("../middlewares/admin-middleware");
 
 // Route publik (tanpa autentikasi)
 router.post("/register", registerUser); // Registrasi user baru

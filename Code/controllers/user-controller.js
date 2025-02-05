@@ -6,6 +6,7 @@ const {
   updateUser,
   deleteUser,
   comparePassword,
+  updateUserRole,
 } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -152,6 +153,32 @@ const deleteUserController = async (req, res) => {
   }
 };
 
+// Fungsi untuk mengupdate role pengguna
+const updateUserRoleController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Validasi role
+    if (!role || !["admin", "user"].includes(role)) {
+      return res
+        .status(400)
+        .json({ message: "Role tidak valid. Gunakan 'admin' atau 'user'." });
+    }
+
+    // Update role pengguna
+    const affectedRows = await updateUserRole(id, role);
+    if (affectedRows === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    res.json({ message: "Role pengguna berhasil diupdate" });
+  } catch (error) {
+    console.error("Error in updateUserRoleController:", error);
+    res.status(500).json({ message: "Terjadi kesalahan server" });
+  }
+};
+
 module.exports = {
   getAllUsersController,
   getUserByIdController,
@@ -159,4 +186,6 @@ module.exports = {
   loginUser,
   updateUsercontroller,
   deleteUserController,
+  createUser,
+  updateUserRoleController,
 };
